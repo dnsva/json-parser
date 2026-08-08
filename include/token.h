@@ -5,8 +5,10 @@
 
 #include <vector>
 #include <map>
+#include <ostream>
 
 enum TokenType {
+    EMPTY, //testing purposes. this is the default value for tokentype
     LBRACE, RBRACE,
     LBRAKET, RBRAKET,
     STRING,
@@ -16,31 +18,44 @@ enum TokenType {
     END_OF_FILE
 };
 
+inline const std::map<TokenType, std::string>printable_tokentype{
+    {EMPTY, "EMPTY"},
+    {LBRACE, "LBRACE"},
+    {RBRACE, "RBRACE"},
+    {LBRAKET, "LBRAKET"},
+    {RBRAKET, "RBRAKET"},
+    {STRING, "STRING"},
+    {NULL_T, "NULL_T"},
+    {FALSE_T, "FALSE_T"},
+    {TRUE_T, "TRUE_T"},
+    {COMMA, "COMMA"},
+    {COLON, "COLON"},
+    {NUMBER, "NUMBER"},
+    {END_OF_FILE, "END_OF_FILE"}
+    
+};
+
 struct Token{
     TokenType type;
-    vector<char> lexeme {};
+    std::vector<char> lexeme {};
     Position location{};
-    int len{};
+    //int len;
 
     //Token() = delete;
-    Token();
+    Token() = default;
 
-    Token(char c, Position p){
-        lexeme.push_back(c);
-        if(!location.exists) location = {p};
-    }
     Token(char c, TokenType t, Position p){
         lexeme.push_back(c);
         type = t;
         location = {p};
     }
     //--------------------------------
-    Token(vector<char> v, TokenType t, Position p) : lexeme{v}, TokenType{t}, location{p}, len{v.size()};
-    //--------------------------------
-    /*Token(string_view s, Position p){
-        lexeme = {s.begin(), s.end()};
-        location = {p};
-    }*/
+    Token(std::vector<char> v, TokenType t, Position p) : lexeme{v}, type{t}, location{p} /*, len{(int)(v.size())}*/ {}
+
+    friend std::ostream& operator<<(std::ostream& os, const Token& t){
+       return os << (printable_tokentype.at(t.type) + "(" + std::string(t.lexeme.begin(), t.lexeme.end()) + ")");
+      
+    };
 
 };
 
