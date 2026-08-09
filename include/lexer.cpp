@@ -60,6 +60,8 @@ optional<Token> get_number(char c){
 
         vector<char> digit {c};
 
+      //  char next_char; 
+
         while(isdigit(peek_next()) || peek_next() == 'e' || peek_next() == 'E' || peek_next() == '+' || peek_next() == '-' || peek_next() == '.'){
             digit.push_back(get_next());
 
@@ -230,8 +232,10 @@ int main(){
 
     //write json contents into json_string 
     ifstream json_file(json_file_path, ios::in | ios::binary); //double check if binary is needed
+
     const auto size_of_file = fs::file_size(json_file_path);
     string json_string(size_of_file, '\0');
+    
     json_file.read(json_string.data(), size_of_file);
 
 
