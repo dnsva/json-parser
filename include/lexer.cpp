@@ -60,13 +60,14 @@ optional<Token> get_number(char c){
 
         vector<char> digit {c};
 
-      //  char next_char; 
+        char next_char = peek_next();
 
-        while(isdigit(peek_next()) || peek_next() == 'e' || peek_next() == 'E' || peek_next() == '+' || peek_next() == '-' || peek_next() == '.'){
+        while(isdigit(next_char) || next_char == 'e' || next_char == 'E' || next_char == '+' || next_char == '-' || next_char == '.'){
             digit.push_back(get_next());
+            next_char = peek_next();
 
-            if(digit.back() == '-' &&  !isdigit(peek_next())){ //check: something about isdigit not working on - char values
-                cout<<"the char found after - is "<<peek_next()<<"\n";
+            if(digit.back() == '-' && !isdigit(next_char)){ //check: something about isdigit not working on - char values
+                cout<<"the char found after - is "<< next_char<<"\n";
                 throw runtime_error("Must have digit after a - \n");
             }
         }
@@ -92,13 +93,14 @@ optional<Token> get_string(char c){
         //must be a string
         vector<char>str {'"'};
 
-        while(peek_next() != '"' && peek_next() != '\0'){
+        char next_char = peek_next();
+        while(next_char != '"' && next_char != '\0'){
             str.push_back(get_next());
             //if(str.back() == '\\' && peek_next() == '"') str.push_back(get_next());
             if(str.back() == '\\') str.push_back(get_next());  //consume the escapee
         }
 
-        if(peek_next() == '"'){
+        if(next_char == '"'){
             str.push_back(get_next());
         }else{
             throw runtime_error("no \" found to end string\n");
@@ -235,7 +237,7 @@ int main(){
 
     const auto size_of_file = fs::file_size(json_file_path);
     string json_string(size_of_file, '\0');
-    
+
     json_file.read(json_string.data(), size_of_file);
 
 
