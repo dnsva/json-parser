@@ -1,8 +1,85 @@
 #include <vector>
 #include <iostream>
 #include <stdlib.h>
+#include <map>
 
 using namespace std;
+
+map<char, int> hex_to_int{
+    {'0', 0}, {'1', 1}, {'2', 2}, {'3', 3}, {'4', 4},
+    {'5', 5}, {'6', 6}, {'7', 7}, {'8', 8}, {'9', 9},
+    {'a', 10}, {'b', 11}, {'c', 12}, {'d', 13}, {'e', 14}, {'f', 15},
+    {'A', 10}, {'B', 11}, {'C', 12}, {'D', 13}, {'E', 14}, {'F', 15}
+};
+
+bool is_valid_escape(const vector<char>& str, int& index){ //reference so that it us updated by necessary amt
+
+    //str[index] should be at the \ char when fn called
+
+    if(index + 1 >= str.size()){
+        throw std::runtime_error("you cant end a string with an escape char");
+    }
+
+    index += 1; //eat the \
+
+    unsigned char buffer = str[index];
+
+    if(buffer == 'u'){
+        if(index+4 >= str.size()) throw std::runtime_error("must have 4 chars following u escape\n");
+
+        unsigned char unicode[4] = {str[index+1], str[index+2], str[index+3], str[index+4]}; //standard U+xxxx
+
+        //update index to eat the extra eaten chars. 
+        index += 4;
+
+        //do hex to binary
+
+        unsigned int bin = 0;
+
+        for(int dig = 0; dig < 4; dig++){
+
+            //shift 4-dig * 4 <<
+
+            if(!((unicode[dig] >='0' && unicode[dig] <= '9') || (unicode[dig] >= 'A' && unicode[dig] <= 'F') || (unicode[dig] >= 'a' && unicode[dig] <= 'f') )){
+                throw std::runtime_error("not a hex digit\n");
+            }
+
+            bin = bin | (hex_to_int[unicode[dig]] << 4*(3-dig));
+
+        }
+
+        //do checks on bin validity:
+        //max unicode value would be U+FFFF which is 16^4 = 65536, min is 0 
+
+        bool is_invalid = false;
+
+        /*
+        ADD COMPAtIBILITY FOR SURROGATE CHECKS 
+        /uxxx/uxxxx
+
+        if(){ //low surrogate 0xDC00–0xDFFF. low surrogate w/o high surrogate preceding it is invalid
+            
+        }
+        if(){ //high surrogate 0xD800–0xDBFF
+            //get the low surrogate and call this function again (not recursion. i just mean it has to check it too)
+
+        }
+        */
+
+        if(!is_invalid){
+            return true;
+        }else{
+            throw std::runtime_error("bad unicode codepoint\n");
+        }
+
+    }else if(buffer == '"' || buffer == '\\' || buffer == '/' || buffer == 'b' || buffer == 'f' || buffer == 'n' || buffer == 'r' || buffer == 't'){
+        return true;
+    }else{
+        throw std::runtime_error("Invalid escape sequence. not one of the allowed chars follow the \\ \n");
+    }
+
+}
+
 
 //unicode checks for characters within a string
 
@@ -29,6 +106,14 @@ bool is_valid_string(vector<char> str){
         int extra_bytes = 0; //default 0 value
         /*1 byte */ if((buffer & 0b10000000) == 0b0){
             extra_bytes = 0; //0xxxxxxx (ASCII)
+
+            if(buffer == '\\'){
+                if(is_valid_escape(str, index)){
+                    index += 1; //since continue is used, this aprt is skipped at the end of the loop
+                    continue;
+                } // if it isnt valid, the fn shouldve thrown an exception
+                
+            }
         }             
         /*2 bytes*/ else if((buffer & 0b11100000) == 0b11000000) extra_bytes = 1; //110xxxxx
         /*3 bytes*/ else if((buffer & 0b11110000) == 0b11100000) extra_bytes = 2; //1110xxxx
@@ -39,7 +124,7 @@ bool is_valid_string(vector<char> str){
 
             if(index+i >= str.size()){
                 //return 0; for tests
-                //throw runtime_error("Improperly formatted string. character incomplete, unable to read char and reached EOF\n");
+                throw runtime_error("Improperly formatted string. character incomplete, unable to read char and reached EOF\n");
             }
 
             buffer = str[index+i];
