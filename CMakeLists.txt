@@ -8,6 +8,5 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(json-parser # for now even tho this is very wrong
-	include/lexer.cpp
-)
+add_executable(lexer lexer.cpp)
+add_executable(test_doc test.cpp)
