@@ -1,4 +1,4 @@
-#include "include/check_valid_strings.h"
+#include "../include/check_valid_strings.h"
 #include <iostream>
 
 using namespace std;
