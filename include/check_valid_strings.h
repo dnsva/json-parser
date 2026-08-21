@@ -6,11 +6,45 @@
 using namespace std;
 
 map<char, int> hex_to_int{
-    {'0', 0}, {'1', 1}, {'2', 2}, {'3', 3}, {'4', 4},
-    {'5', 5}, {'6', 6}, {'7', 7}, {'8', 8}, {'9', 9},
-    {'a', 10}, {'b', 11}, {'c', 12}, {'d', 13}, {'e', 14}, {'f', 15},
-    {'A', 10}, {'B', 11}, {'C', 12}, {'D', 13}, {'E', 14}, {'F', 15}
+    {'0', 0},
+    {'1', 1},
+    {'2', 2},
+    {'3', 3},
+    {'4', 4},
+    {'5', 5},
+    {'6', 6},
+    {'7', 7},
+    {'8', 8},
+    {'9', 9},
+    {'a', 10},
+    {'b', 11},
+    {'c', 12},
+    {'d', 13},
+    {'e', 14},
+    {'f', 15},
+    {'A', 10},
+    {'B', 11},
+    {'C', 12},
+    {'D', 13},
+    {'E', 14},
+    {'F', 15}
 };
+
+unsigned int char_hex_to_binary(char unicode[]){
+    unsigned int bin = 0;
+    for(int dig = 0; dig < 4; dig++){
+
+        //shift 4-dig * 4 <<
+
+        if(!((unicode[dig] >='0' && unicode[dig] <= '9') || (unicode[dig] >= 'A' && unicode[dig] <= 'F') || (unicode[dig] >= 'a' && unicode[dig] <= 'f') )){
+            throw std::runtime_error("not a hex digit\n");
+        }
+
+        bin = bin | (hex_to_int[unicode[dig]] << 4*(3-dig));
+
+    }
+    return bin;
+}
 
 bool is_valid_escape(const vector<char>& str, int& index){ //reference so that it us updated by necessary amt
 
@@ -20,70 +54,65 @@ bool is_valid_escape(const vector<char>& str, int& index){ //reference so that i
         throw std::runtime_error("you cant end a string with an escape char");
     }
 
-    index += 1; //eat the \
+    index += 1; //eat the backslash
+    char buffer = str[index]; //the escape char 
 
-    unsigned char buffer = str[index];
+    if(buffer == '"' || buffer == '\\' || buffer == '/' || buffer == 'b' || buffer == 'f' || buffer == 'n' || buffer == 'r' || buffer == 't'){
+        return true;
+    }
 
     if(buffer == 'u'){
         if(index+4 >= str.size()) throw std::runtime_error("must have 4 chars following u escape\n");
 
-        unsigned char unicode[4] = {str[index+1], str[index+2], str[index+3], str[index+4]}; //standard U+xxxx
+        char unicode[4] = {str[index+1], str[index+2], str[index+3], str[index+4]}; //standard U+xxxx
 
         //update index to eat the extra eaten chars. 
         index += 4;
 
         //do hex to binary
+        unsigned int bin = char_hex_to_binary(unicode);
 
-        unsigned int bin = 0;
+        //do checks on bin validity: (do checks on surrogate pairs - if applicable)
 
-        for(int dig = 0; dig < 4; dig++){
-
-            //shift 4-dig * 4 <<
-
-            if(!((unicode[dig] >='0' && unicode[dig] <= '9') || (unicode[dig] >= 'A' && unicode[dig] <= 'F') || (unicode[dig] >= 'a' && unicode[dig] <= 'f') )){
-                throw std::runtime_error("not a hex digit\n");
-            }
-
-            bin = bin | (hex_to_int[unicode[dig]] << 4*(3-dig));
-
+        if(bin >= 0xDC00 && bin <= 0xDFFF){ //low surrogate. low surrogate w/o high surrogate preceding it is invalid
+            throw std::runtime_error("Can't have low surrogate w/o high surrogate preceding it\n");
         }
+        
+        if(bin >= 0xD800 && bin <= 0xDBFF){ //high surrogate
 
-        //do checks on bin validity:
-        //max unicode value would be U+FFFF which is 16^4 = 65536, min is 0 
+            //expect low surrogate to follow: 
 
-        bool is_invalid = false;
+            if(index + 6 >= str.size()) throw std::runtime_error("no proper succeeding low surrogate unicode pair (str cut off)\n");
 
-        /*
-        ADD COMPAtIBILITY FOR SURROGATE CHECKS 
-        /uxxx/uxxxx
+            if(str[index+1] != '\\' || str[index+2] != 'u') throw std::runtime_error("expected second unicode pair. none found.\n");
 
-        if(){ //low surrogate 0xDC00–0xDFFF. low surrogate w/o high surrogate preceding it is invalid
+            //update with new (second) code point
+            unicode[0] = str[index+3];
+            unicode[1] = str[index+4];
+            unicode[2] = str[index+5];
+            unicode[3] = str[index+6];
+
+            index += 6; //adjust for reading the new unicode!
+
+            bin = char_hex_to_binary(unicode);
+
+            if(bin < 0xDC00 || bin > 0xDFFF) throw std::runtime_error("Not a low surrogate codepoint that follows the high surrogate\n");
             
         }
-        if(){ //high surrogate 0xD800–0xDBFF
-            //get the low surrogate and call this function again (not recursion. i just mean it has to check it too)
 
-        }
-        */
+        return true; //passed all the checks above
 
-        if(!is_invalid){
-            return true;
-        }else{
-            throw std::runtime_error("bad unicode codepoint\n");
-        }
-
-    }else if(buffer == '"' || buffer == '\\' || buffer == '/' || buffer == 'b' || buffer == 'f' || buffer == 'n' || buffer == 'r' || buffer == 't'){
-        return true;
-    }else{
-        throw std::runtime_error("Invalid escape sequence. not one of the allowed chars follow the \\ \n");
     }
-
+    
+    //if not one of the above conditions:
+    throw std::runtime_error("Invalid escape sequence. not one of the allowed chars follow the \\ \n");
+    
 }
 
 
 //unicode checks for characters within a string
 
-bool is_valid_string(vector<char> str){
+bool is_valid_string(const vector<char>& str){ //const so no unnecessary copy done
 
     //check if each char in str is OK
 
