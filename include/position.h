@@ -2,6 +2,8 @@
 #ifndef POSITION_H
 #define POSITION_H
 
+#include <iostream>
+
 struct Position{ //of the json or text file
     int row{};
     int col{};
@@ -17,7 +19,25 @@ struct Position{ //of the json or text file
         this->col++;
         return temp;
     }
-
 };
+
+/*
+
+super wrong. do error handling later 
+
+void print_line(Position p, ifstream& file){ //make sure file pos is restored
+
+    auto saved_pos = file.tellg();
+
+    string line;
+
+    file.seekg(p.row*p.col + p.col);
+    file.getline(line, p.col+1);
+
+    std::cout<<line<<"\n";
+
+}
+
+*/
 
 #endif
